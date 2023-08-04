@@ -21,6 +21,8 @@
 #include "src/cost/correctness.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
+#include <iostream>
+
 using namespace cpputil;
 using namespace std;
 using namespace x64asm;
@@ -206,11 +208,28 @@ Cost CorrectnessCost::gp_error(const CpuState& t, const CpuState& r, const RegSe
         assert(is_r_rh);
         continue;
       }
-
+      // cout << 'full_t' << t << endl;
+      cout << "val_t" << val_t << endl; //t[r_t]; 
+      // cout << 'full_r' << r << endl;
+      cout << "val_r" << val_r << endl; // r[Constants::rhs()[*r_r]] or r[*r_r] or r.read_gp(*r_r, size, 0);
       const auto eval = evaluate_distance(val_t, val_r) + (is_same ? 0 : misalign_penalty_);
-
+      cout << "eval" << eval << endl;
       delta = min(delta, eval);
-    }
+      cout << "delta" << delta << endl;
+      cout << r << endl;
+      cout << "r_t" << r_t << endl;
+      std::ostringstream cpu_state_data;
+      cpu_state_data << r;
+      std::string resultString = cpu_state_data.str();
+      std::cout << "Result as a string: " << resultString << std::endl;
+
+      size_t size = sizeof(r);
+
+      std::cout << "size of r " << size << " bytes" << std::endl;
+      uint64_t new_val_r = static_cast<uint64_t>(val_r);
+      std::cout << "test" << (val_t ^ new_val_r) <<std::endl;
+      
+      }
     cost += delta;
   }
 
