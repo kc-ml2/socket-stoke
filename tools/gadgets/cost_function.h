@@ -34,6 +34,15 @@ class CostFunctionGadget : public CostFunction {
 public:
   CostFunctionGadget(const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb) : CostFunction(), fxn_(build_fxn(target, test_sb, perf_sb)) {
   }
+  /*
+  result_type test_operator(int client, const Cfg& cfg, Cost max) {
+    //return (*fxn_).test_operator(client, cfg, max);
+    return (*fxn_)(cfg, max);
+  }  
+  */
+  result_type operator()(int client, const Cfg& cfg, Cost max) {
+    return (*fxn_)(client, cfg, max);
+  }
 
   result_type operator()(const Cfg& cfg, Cost max) {
     return (*fxn_)(cfg, max);

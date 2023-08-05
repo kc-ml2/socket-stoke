@@ -49,7 +49,14 @@ public:
     else
       return result_type(true, res/tc_count);
   }
-
+  /*
+  result_type test_operator(int client, const Cfg& cfg, Cost max = max_cost) {
+    return (*this)(cfg, max);
+  }  
+  */
+  result_type operator()(int client, const Cfg& cfg, Cost max = max_cost) {
+    return (*this)(cfg, max);
+  }
   /** Add to the measured latency */
   static void measured_callback(const StateCallbackData& data, void* arg) {
     MeasuredCost* ptr = (MeasuredCost*)arg;

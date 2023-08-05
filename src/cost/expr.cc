@@ -70,7 +70,32 @@ set<CostFunction*> ExprCost::leaf_functions() const {
   return set<CostFunction*>();
 
 }
+ExprCost::result_type ExprCost::operator()(int client, const Cfg& cfg, Cost max) {
+  // Get the full list of leaf functions
+  auto leaves = all_leaf_functions();
 
+  // run the sandbox, if needed
+  if (need_test_sandbox_)
+    run_test_sandbox(cfg);
+  if (need_perf_sandbox_)
+    run_perf_sandbox(cfg);
+
+  // build the environment (i.e. run the actual cost functions)
+  std::map<CostFunction*, Cost> env;
+  for (auto it : leaves) {
+    env[it] = (*it)(client, cfg, max).second;
+  }
+
+  // compute cost and correctness (i.e. combine the results together)
+  Cost cost = run(env);
+
+  bool correct = true;
+  if (correctness_) {
+    correct = (correctness_->run(env) != 0);
+  }
+
+  return result_type(correct, cost);
+}
 ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
 
   // Get the full list of leaf functions
@@ -98,6 +123,38 @@ ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
 
   return result_type(correct, cost);
 }
+/*
+ExprCost::result_type ExprCost::operator()(int client, const Cfg& cfg, Cost max) {
+
+  // Get the full list of leaf functions
+  auto leaves = all_leaf_functions();
+
+  // run the sandbox, if needed
+  if (need_test_sandbox_)
+    run_test_sandbox(cfg);
+  if (need_perf_sandbox_)
+    run_perf_sandbox(cfg);
+
+  // build the environment (i.e. run the actual cost functions)
+  std::map<CostFunction*, Cost> env;
+  for (auto it : leaves) {
+    env[it] = (*it)(cfg, max).second;
+  }
+
+  // compute cost and correctness (i.e. combine the results together)
+  Cost cost = run(env);
+
+  bool correct = true;
+  if (correctness_) {
+    correct = (correctness_->run(env) != 0);
+  }
+
+  return result_type(correct, cost);
+}
+
+*/
+
+
 
 Cost ExprCost::run(const std::map<CostFunction*, Cost>& env) const {
 

@@ -36,6 +36,15 @@ public:
 
     return result_type(true, buffer.size());
   }
+  /*
+
+  result_type test_operator(int client, const Cfg& cfg, Cost max = max_cost) {
+    return (*this)(cfg, max);
+  }
+  */
+  result_type operator()(int client, const Cfg& cfg, Cost max = max_cost) {
+    return (*this)(cfg, max);
+  }
 
 private:
 

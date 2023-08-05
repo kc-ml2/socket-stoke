@@ -100,7 +100,13 @@ public:
   /** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
     result would equal or exceed that value. */
   virtual result_type operator()(const Cfg& cfg, const Cost max = max_cost);
-
+  //virtual result_type operator()(int client, const Cfg& cfg, const Cost max = max_cost);
+  /*
+  result_type test_operator(int client, const Cfg& cfg, Cost max = max_cost) {
+    return (*this)(cfg, max);
+  }  
+  */
+  virtual result_type operator()(int client, const Cfg& cfg, const Cost max = max_cost);
   /** Returns the number of testcases used in this function's correctness term. */
   size_t num_testcases() const {
     return test_sandbox_->size();
@@ -186,9 +192,11 @@ private:
   Cost max_correctness(const Cfg& cfg, const Cost max);
   /** Evaluate correctness by summing cost over testcases. */
   Cost sum_correctness(const Cfg& cfg, const Cost max);
-
+  Cost sum_correctness(int client, const Cfg& cfg, const Cost max);
+  Cost evaluate_correctness(int client, const Cfg& cfg, const Cost max);
   /** Evaluate error between states. */
   Cost evaluate_error(const CpuState& t, const CpuState& r, const x64asm::RegSet& defs) const;
+  Cost evaluate_error(int client, const CpuState& t, const CpuState& r, const x64asm::RegSet& defs) const;
   /** Evaluate error between general purpose registers. */
   Cost gp_error(const CpuState& t, const CpuState& r, const x64asm::RegSet& defs) const;
   /** Evaluate error between sse registers. */

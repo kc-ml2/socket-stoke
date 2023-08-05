@@ -82,7 +82,10 @@ public:
 
   /** Compute the cost of this expression. */
   result_type operator()(const Cfg& cfg, Cost max = max_cost);
-
+  result_type operator()(int client, const Cfg& cfg, Cost max = max_cost);
+  result_type test_operator(int client, const Cfg& cfg, Cost max = max_cost) {
+    return (*this)(cfg, max);
+  }
   /** Set the correctness term to another expression. */
   ExprCost& set_correctness(ExprCost* correctness) {
     correctness_ = correctness;

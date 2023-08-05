@@ -47,7 +47,8 @@ public:
     must call run_sandbox() to ensure that the sandbox was run, either by the client
     of the CostFunction or by the CostFunction itself.*/
   virtual result_type operator()(const Cfg& cfg, const Cost max = max_cost) = 0;
-
+  virtual result_type operator()(int client, const Cfg& cfg, const Cost max = max_cost) = 0;
+  //virtual result_type test_operator(int client, const Cfg& cfg, const Cost max = max_cost) = 0;
   /** Does this CostFunction require a test Sandbox object?
       Contract for clients:
 

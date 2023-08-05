@@ -116,7 +116,7 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
     const auto p = prob_(gen_);
     const auto max = state.current_cost - (log(p) / beta_);
 
-    const auto new_res = fxn(state.current, max + 1);
+    const auto new_res = fxn(client, state.current, max + 1);
     const auto is_correct = new_res.first;
     const auto new_cost = new_res.second;
 

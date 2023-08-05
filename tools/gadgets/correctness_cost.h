@@ -36,6 +36,7 @@ public:
     set_min_ulp(min_ulp_arg);
     set_reduction(reduction_arg);
   }
+
 };
 
 } // namespace stoke

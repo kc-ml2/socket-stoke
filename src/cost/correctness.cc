@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <iostream>
+#include <cstring>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
 #include <cmath>
 
 #include <algorithm>
@@ -74,6 +79,16 @@ void CorrectnessCost::recompute_target_defs(const RegSet& rs) {
 
 /** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
   result would equal or exceed that value. */
+
+CorrectnessCost::result_type CorrectnessCost::operator()(int client, const Cfg& cfg, const Cost max) {
+
+  run_test_sandbox(cfg);
+
+  auto cost = evaluate_correctness(client, cfg, max);
+  bool correct = cost == 0;
+  return result_type(correct, cost);
+}
+
 CorrectnessCost::result_type CorrectnessCost::operator()(const Cfg& cfg, const Cost max) {
 
   run_test_sandbox(cfg);
@@ -82,7 +97,30 @@ CorrectnessCost::result_type CorrectnessCost::operator()(const Cfg& cfg, const C
   bool correct = cost == 0;
   return result_type(correct, cost);
 }
+/*
+CorrectnessCost::result_type CorrectnessCost::test_operator(int client, const Cfg& cfg, const Cost max) {
 
+  run_test_sandbox(cfg);
+
+  auto cost = evaluate_correctness(cfg, max);
+  bool correct = cost == 0;
+  return result_type(correct, cost);
+}
+
+*/
+
+Cost CorrectnessCost::evaluate_correctness(int client, const Cfg& cfg, const Cost max) {
+
+  switch (reduction_) {
+  case Reduction::MAX:
+    return max_correctness(cfg, max); // TODO input client 
+  case Reduction::SUM:
+    return sum_correctness(client, cfg, max);
+  default:
+    assert(false);
+    return 0;
+  }
+}
 Cost CorrectnessCost::evaluate_correctness(const Cfg& cfg, const Cost max) {
 
   switch (reduction_) {
@@ -132,6 +170,56 @@ Cost CorrectnessCost::sum_correctness(const Cfg& cfg, const Cost max) {
 
   assert(res <= max_correctness_cost);
   return res;
+}
+
+Cost CorrectnessCost::sum_correctness(int client, const Cfg& cfg, const Cost max) {
+  Cost res = 0;
+  counter_example_testcase_ = -1;
+
+  size_t i = 0;
+  for (size_t ie = test_sandbox_->size(); res < max && i < ie; ++i) {
+    const auto err = evaluate_error(client, reference_out_[i], *(test_sandbox_->get_result(i)), cfg.def_outs());
+    assert(err <= max_testcase_cost);
+    if (err != 0 && counter_example_testcase_ < 0) {
+      counter_example_testcase_ = i;
+    }
+
+    res += err;
+  }
+
+  assert(res <= max_correctness_cost);
+  return res;
+}
+
+Cost CorrectnessCost::evaluate_error(int client, const CpuState& t, const CpuState& r, const RegSet& defs) const {
+  // Only assess a signal penalty if target and rewrite disagree
+  if (t.code != r.code) {
+    return sig_penalty_;
+  }
+  // If this testcase has signalled, we can't guarantee register state --
+  // and technically we can do whatever we want with signalling code -- so
+  // just return zero cost
+  if (t.code != ErrorCode::NORMAL) {
+    return 0;
+  }
+  std::ostringstream cpu_state_data;
+  cpu_state_data << r;
+  std::string resultString = cpu_state_data.str();
+  //std::cout << "Result as a string: " << resultString << std::endl;
+  send(client, resultString.c_str(), resultString.size(), 0);
+  // Otherwise, we can do the usual thing and check results register by register
+  Cost cost = 0;
+  cost += gp_error(t, r, defs);
+  cost += sse_error(t.sse, r.sse, defs);
+  cost += rflags_error(t.rf, r.rf, defs);
+  if (stack_out_) {
+    cost += mem_error(t.stack, r.stack);
+  }
+  if (heap_out_) {
+    cost += block_heap_ ? block_mem_error(t.heap, r.heap, r.sse, defs) : mem_error(t.heap, r.heap);
+  }
+
+  return cost;
 }
 
 Cost CorrectnessCost::evaluate_error(const CpuState& t, const CpuState& r, const RegSet& defs) const {

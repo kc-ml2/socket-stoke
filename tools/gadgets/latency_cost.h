@@ -25,6 +25,8 @@ class LatencyCostGadget : public LatencyCost {
 public:
   LatencyCostGadget() : LatencyCost() {
   }
+  
+
 };
 
 } // namespace stoke
