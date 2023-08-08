@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <iostream>
+#include <cstring>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
 #include <cassert>
 #include <cmath>
 #include <csignal>
@@ -109,8 +114,10 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
     ti = (*transform_).transform_test(client, state.current);
     move_statistics[ti.move_type].num_proposed++;
     if (!ti.success) {
+      std::string empty_string = "no";
+      send(client, empty_string.c_str(), empty_string.size(), 0);
       continue;
-    }
+    } 
     move_statistics[ti.move_type].num_succeeded++;
 
     const auto p = prob_(gen_);

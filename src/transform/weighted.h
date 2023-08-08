@@ -57,7 +57,7 @@ public:
 
 		recv(client, &num, sizeof(num), 0);
 
-    std::cout << "Server: " << num << std::endl;
+    //std::cout << "Server: " << num << std::endl;
     size_t pool_index = num % transform_pool_.size();
     size_t tform_index = transform_pool_[pool_index];
     Transform* tr = transforms_[tform_index];

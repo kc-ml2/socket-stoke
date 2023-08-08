@@ -10,7 +10,7 @@ def start_server():
     print("Server listening on {}:{}".format(host, port))
     while True:
         conn, addr = server_socket.accept()
-        print("Connected to", addr)
+        #print("Connected to", addr)
         while True:
             '''
             data = conn.recv(4)  # Receive 4 bytes (size of int)
@@ -20,13 +20,20 @@ def start_server():
             print("Received integer from client:", received_data)
             '''
             #num = int(input("server : "))
-            num = random.randint(1,6)
+            num = random.randint(0,6)
             conn.sendall(struct.pack('i', num))
-            ''''''
-            data = conn.recv(1024).decode()  # Receive data as a string from client
+            
+            
+            
+            data = conn.recv(4096).decode()  # Receive data as a string from client
+            '''
             if not data:
                 continue  # Connection closed by the client
-            print("Received data:", data)
+            '''
+
+            #print("Received data:", data)
+            
+            
         print("Connection closed with", addr)
         conn.close()
 if __name__ == "__main__":
