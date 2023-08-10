@@ -20,12 +20,12 @@ def start_server():
             print("Received integer from client:", received_data)
             '''
             #num = int(input("server : "))
-            num = random.randint(0,6)
+            num = random.randint(0,100)
             conn.sendall(struct.pack('i', num))
             
             
             
-            data = conn.recv(4096).decode()  # Receive data as a string from client
+            data = conn.recv(40000).decode()  # Receive data as a string from client
             '''
             if not data:
                 continue  # Connection closed by the client

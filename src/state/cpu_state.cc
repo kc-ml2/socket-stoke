@@ -288,32 +288,32 @@ ostream& CpuState::write_text(ostream& os) const {
   os << endl;
   os << endl;
 
-  os << "gps" << endl;
+  //os << "gps" << endl;
   gp.write_text(os, gps, 5);
   os << endl;
   os << endl;
 
-  os << "sses" << endl;
+  //os << "sses" << endl;
   sse.write_text(os, sses, 3);
   os << endl;
   os << endl;
 
-  os << "rflags" << endl;
+  //os << "rflags" << endl;
   rf.write_text(os, rflags, 1);
   os << endl;
   os << endl;
 
-  os << "stack" << endl;
+  //os << "stack" << endl;
   stack.write_text(os);
   os << endl;
   os << endl;
 
-  os << "heap" << endl;
+  //os << "heap" << endl;
   heap.write_text(os);
   os << endl;
   os << endl;
 
-  os << "data" << endl;
+  //os << "data" << endl;
   data.write_text(os);
   os << endl;
   os << endl;
