@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <unistd.h>
 #include <iostream>
 #include <cstring>
 #include <sys/socket.h>
@@ -177,6 +178,7 @@ Cost CorrectnessCost::sum_correctness(int client, const Cfg& cfg, const Cost max
   counter_example_testcase_ = -1;
 
   size_t i = 0;
+  
   for (size_t ie = test_sandbox_->size(); res < max && i < ie; ++i) {
     const auto err = evaluate_error(client, reference_out_[i], *(test_sandbox_->get_result(i)), cfg.def_outs());
     assert(err <= max_testcase_cost);
@@ -194,22 +196,37 @@ Cost CorrectnessCost::sum_correctness(int client, const Cfg& cfg, const Cost max
 Cost CorrectnessCost::evaluate_error(int client, const CpuState& t, const CpuState& r, const RegSet& defs) const {
   // Only assess a signal penalty if target and rewrite disagree
   if (t.code != r.code) {
+    std::string dynamic_length_string = "#########";  // how to treat it
+    int data_length = dynamic_length_string.size();
+
+
+    // Send the length buffer and then the data
+    send(client, &data_length, sizeof(int), 0);
+    send(client, dynamic_length_string.c_str(), data_length, 0);
+
     return sig_penalty_;
   }
   // If this testcase has signalled, we can't guarantee register state --
   // and technically we can do whatever we want with signalling code -- so
   // just return zero cost
   if (t.code != ErrorCode::NORMAL) {
+    //TODO
+    //it doesn't seem important now
+    cout << "code abnormal error" << endl;
+
     return 0;
   }
+  //sending part
   std::ostringstream cpu_state_data;
   cpu_state_data << r;
   std::string resultString = cpu_state_data.str();
-  //std::cout << "Result as a string: " << resultString << std::endl;
-  
-  //sending part
+  int data_length = resultString.size();
   send(client, resultString.c_str(), resultString.size(), 0);
+  
 
+  // Send the length buffer and then the data
+  send(client, &data_length, sizeof(int), 0);
+  send(client, resultString.c_str(), data_length, 0);
 
   // Otherwise, we can do the usual thing and check results register by register
   Cost cost = 0;

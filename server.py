@@ -21,17 +21,22 @@ def start_server():
             '''
             #num = int(input("server : "))
             num = random.randint(0,100)
+
+
             conn.sendall(struct.pack('i', num))
+            length_buffer = conn.recv(4)
             
-            
-            
-            data = conn.recv(40000).decode()  # Receive data as a string from client
+            data_length = int.from_bytes(length_buffer, byteorder='little')  # Convert bytes to integer
+
+            # Receive the actual data based on the calculated length
+            data = conn.recv(data_length).decode()
+
+            # Process the received data
             '''
             if not data:
                 continue  # Connection closed by the client
             '''
 
-            #print("Received data:", data)
             
             
         print("Connection closed with", addr)

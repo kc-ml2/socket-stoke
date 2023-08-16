@@ -114,8 +114,13 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
     ti = (*transform_).transform_test(client, state.current);
     move_statistics[ti.move_type].num_proposed++;
     if (!ti.success) {
-      std::string empty_string = "no";
-      send(client, empty_string.c_str(), empty_string.size(), 0);
+      std::string dynamic_length_string = "not success";
+      int data_length = dynamic_length_string.size();
+
+
+      // Send the length buffer and then the data
+      send(client, &data_length, sizeof(int), 0);
+      send(client, dynamic_length_string.c_str(), data_length, 0);
       continue;
     } 
     move_statistics[ti.move_type].num_succeeded++;
