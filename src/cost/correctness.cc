@@ -185,10 +185,19 @@ Cost CorrectnessCost::sum_correctness(int client, const Cfg& cfg, const Cost max
     if (err != 0 && counter_example_testcase_ < 0) {
       counter_example_testcase_ = i;
     }
-
+    send(client, &err, sizeof(int), 0);
     res += err;
   }
-
+  auto cfg_code = cfg.get_code();
+  std::ostringstream code;
+  code << cfg_code;
+  std::string resultString = code.str();
+  int data_length = resultString.size();
+  
+  // Send the length buffer and then the data
+  send(client, &data_length, sizeof(int), 0);
+  send(client, resultString.c_str(), data_length, 0);
+  
   assert(res <= max_correctness_cost);
   return res;
 }
@@ -196,7 +205,7 @@ Cost CorrectnessCost::sum_correctness(int client, const Cfg& cfg, const Cost max
 Cost CorrectnessCost::evaluate_error(int client, const CpuState& t, const CpuState& r, const RegSet& defs) const {
   // Only assess a signal penalty if target and rewrite disagree
   if (t.code != r.code) {
-    std::string dynamic_length_string = "#########";  // how to treat it
+    std::string dynamic_length_string = "code not same error";  // how to treat it
     int data_length = dynamic_length_string.size();
 
 
@@ -221,9 +230,7 @@ Cost CorrectnessCost::evaluate_error(int client, const CpuState& t, const CpuSta
   cpu_state_data << r;
   std::string resultString = cpu_state_data.str();
   int data_length = resultString.size();
-  send(client, resultString.c_str(), resultString.size(), 0);
   
-
   // Send the length buffer and then the data
   send(client, &data_length, sizeof(int), 0);
   send(client, resultString.c_str(), data_length, 0);

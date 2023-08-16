@@ -121,6 +121,15 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
       // Send the length buffer and then the data
       send(client, &data_length, sizeof(int), 0);
       send(client, dynamic_length_string.c_str(), data_length, 0);
+
+      int err = 999999999;
+      send(client, &err, sizeof(int), 0);
+
+      std::string dynamic_length_string2 = "not success";
+      int data_length2 = dynamic_length_string2.size();
+
+      send(client, &data_length2, sizeof(int), 0);
+      send(client, dynamic_length_string2.c_str(), data_length2, 0);
       continue;
     } 
     move_statistics[ti.move_type].num_succeeded++;

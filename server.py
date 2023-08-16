@@ -24,13 +24,18 @@ def start_server():
 
 
             conn.sendall(struct.pack('i', num))
-            length_buffer = conn.recv(4)
             
-            data_length = int.from_bytes(length_buffer, byteorder='little')  # Convert bytes to integer
-
-            # Receive the actual data based on the calculated length
-            data = conn.recv(data_length).decode()
-
+            length_buffer = conn.recv(4)
+            cpu_state_length = int.from_bytes(length_buffer, byteorder='little')  # Convert bytes to integer
+            cpu_state = conn.recv(cpu_state_length).decode()
+            ##print("cpu_state : ",cpu_state)
+            cost_buffer = conn.recv(4)
+            cost = int.from_bytes(cost_buffer, byteorder='little')  # Convert bytes to integer
+            
+            length_buffer = conn.recv(4)
+            assembly_length = int.from_bytes(length_buffer, byteorder='little')  # Convert bytes to integer
+            assembly = conn.recv(assembly_length).decode()
+            ##print(assembly)
             # Process the received data
             '''
             if not data:
