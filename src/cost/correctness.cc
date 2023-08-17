@@ -185,19 +185,21 @@ Cost CorrectnessCost::sum_correctness(int client, const Cfg& cfg, const Cost max
     if (err != 0 && counter_example_testcase_ < 0) {
       counter_example_testcase_ = i;
     }
-    send(client, &err, sizeof(int), 0);
+    
     res += err;
+
+    auto cfg_code = cfg.get_code();
+    std::ostringstream code;
+    code << cfg_code;
+    std::string resultString = code.str();
+    int data_length = resultString.size();
+    
+    // Send the length buffer and then the data
+    send(client, &data_length, sizeof(int), 0);
+    send(client, resultString.c_str(), data_length, 0);
   }
-  auto cfg_code = cfg.get_code();
-  std::ostringstream code;
-  code << cfg_code;
-  std::string resultString = code.str();
-  int data_length = resultString.size();
-  
-  // Send the length buffer and then the data
-  send(client, &data_length, sizeof(int), 0);
-  send(client, resultString.c_str(), data_length, 0);
-  
+
+
   assert(res <= max_correctness_cost);
   return res;
 }
@@ -212,7 +214,7 @@ Cost CorrectnessCost::evaluate_error(int client, const CpuState& t, const CpuSta
     // Send the length buffer and then the data
     send(client, &data_length, sizeof(int), 0);
     send(client, dynamic_length_string.c_str(), data_length, 0);
-
+    send(client, &data_length, sizeof(int), 0);
     return sig_penalty_;
   }
   // If this testcase has signalled, we can't guarantee register state --
@@ -246,7 +248,7 @@ Cost CorrectnessCost::evaluate_error(int client, const CpuState& t, const CpuSta
   if (heap_out_) {
     cost += block_heap_ ? block_mem_error(t.heap, r.heap, r.sse, defs) : mem_error(t.heap, r.heap);
   }
-
+  send(client, &cost, sizeof(int), 0);
   return cost;
 }
 
