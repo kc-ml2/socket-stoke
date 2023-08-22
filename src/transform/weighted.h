@@ -31,6 +31,8 @@
 
 #include "src/transform/transform.h"
 
+using namespace std;
+
 namespace stoke {
 
 class WeightedTransform : public Transform {
@@ -52,9 +54,22 @@ public:
     return ti;
   }
   TransformInfo transform_test(int client, Cfg& cfg){
-    int num;
-		recv(client, &num, sizeof(num), 0);
-    size_t pool_index = num % transform_pool_.size();
+    int restart;
+    int action;
+    recv(client, &restart, sizeof(restart), 0);
+		recv(client, &action, sizeof(action), 0);
+
+    if (restart == 1){
+      std::string dynamic_length_string = "reset";
+      int data_length = dynamic_length_string.size();
+
+      // Send the length buffer and then the data
+      send(client, &data_length, sizeof(int), 0);
+      send(client, dynamic_length_string.c_str(), data_length, 0);
+      throw std::runtime_error("restart");
+    }
+
+    size_t pool_index = action % transform_pool_.size();
     size_t tform_index = transform_pool_[pool_index];
     Transform* tr = transforms_[tform_index];
     auto ti = (*tr)(cfg);

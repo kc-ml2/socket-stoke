@@ -89,7 +89,7 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
     state.best_correct_cost = 0;
     return;
   }
-  fxn(client, state.current, 100000000);
+  fxn(client, state.current, 100000000); // for sending initial state
   TransformInfo ti;
 
   give_up_now = false;

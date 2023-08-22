@@ -411,7 +411,6 @@ int main(int argc, char** argv) {
   cout << "--> Waiting for server to confirm...\n";
   // recv(client, buffer, bufsize, 0);
   cout << "--> Connection confirmed..\n";
-
   const auto start = steady_clock::now();
   duration<double> search_elapsed = duration<double>(0.0);
 
@@ -478,115 +477,129 @@ int main(int argc, char** argv) {
 
   string final_msg;
   SearchStateGadget state(target, aux_fxns);
-  for (size_t i = 0; ; ++i) {
-    CostFunctionGadget fxn(target, &training_sb, &perf_sb);
+  while (true){
+    //restart start
 
-    // determine iteration timeout
-    Expr<size_t>* timeout_expr = i >= cycle_timeouts.size() ? cycle_timeouts[cycle_timeouts.size()-1] : cycle_timeouts[i];
-    function<size_t (const string&)> f2 = [i](const string& s) -> size_t { return i; };
-    size_t cur_timeout = (*timeout_expr)(f2);
-    size_t timeout_left = cur_timeout;
-    if (timeout_iterations_arg.value()) {
-      timeout_left = std::max(0UL, timeout_iterations_arg.value() - total_iterations);
-    }
-    search.set_timeout_itr(std::min(cur_timeout, timeout_left));
+    try {
+      for (size_t i = 0; ; ++i) {
+        CostFunctionGadget fxn(target, &training_sb, &perf_sb);
 
-    Console::msg() << "Running search (timeout is " << cur_timeout << " iterations";
-    // timeout in seconds
-    if (timeout_seconds_arg.value() != 0) {
-      auto time_remaining = duration_cast<duration<double>>(steady_clock::now() - start) + duration<double>(timeout_seconds_arg.value());
-      if (time_remaining <= steady_clock::duration::zero()) {
-        show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, false, true);
-        Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+        // determine iteration timeout
+        Expr<size_t>* timeout_expr = i >= cycle_timeouts.size() ? cycle_timeouts[cycle_timeouts.size()-1] : cycle_timeouts[i];
+        function<size_t (const string&)> f2 = [i](const string& s) -> size_t { return i; };
+        size_t cur_timeout = (*timeout_expr)(f2);
+        size_t timeout_left = cur_timeout;
+        if (timeout_iterations_arg.value()) {
+          timeout_left = std::max(0UL, timeout_iterations_arg.value() - total_iterations);
+        }
+        search.set_timeout_itr(std::min(cur_timeout, timeout_left));
+
+        Console::msg() << "Running search (timeout is " << cur_timeout << " iterations";
+        // timeout in seconds
+        if (timeout_seconds_arg.value() != 0) {
+          auto time_remaining = duration_cast<duration<double>>(steady_clock::now() - start) + duration<double>(timeout_seconds_arg.value());
+          if (time_remaining <= steady_clock::duration::zero()) {
+            show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, false, true);
+            Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+          }
+          search.set_timeout_sec(time_remaining);
+          Console::msg() << " / " << time_remaining.count() << " seconds";
+        }
+        Console::msg() << "):" << endl << endl;
+        state = SearchStateGadget(target, aux_fxns);
+
+        // Run the initial cost function
+        // Used by statistics output and a sanity check
+        auto initial_cost = fxn(state.current);
+        if (!initial_cost.first && init_arg == Init::TARGET) {
+          Console::warn() << "Initial state has non-zero correctness cost with --init target.";
+        }
+        starting_cost = initial_cost.second;
+        lowest_cost = initial_cost.second;
+        if (initial_cost.first) {
+          lowest_correct = initial_cost.second;
+        } else {
+          lowest_correct = 0;
+        }
+
+        const auto start_search = steady_clock::now();
+        search.run(client, target, fxn, init_arg, state, aux_fxns);
+        search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search);
+
+        total_iterations += search.get_statistics().iterations;
+        total_restarts++;
+
+        if (state.interrupted) {
+          Console::msg() << endl;
+          show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, false, false);
+          Console::msg() << "Search interrupted!" << endl;
+          exit(1);
+        }
+
+        const auto verified = verifier.verify(target, state.best_correct);
+
+        if (verifier.has_error()) {
+          Console::msg() << "The verifier encountered an error:" << endl;
+          Console::msg() << verifier.error() << endl;
+        }
+
+        if (!state.success) {
+          Console::msg() << "Unable to discover a new correct rewrite before timing out... " << endl << endl;
+        } else if (!verified) {
+          Console::msg() << "Unable to verify new rewrite..." << endl << endl;
+        } else {
+          if (strategy_arg.value() == "none") {
+            final_msg = "Search terminated successfully (but no verification was performed)!";
+          } else {
+            final_msg = "Search terminated successfully with a verified rewrite!";
+          }
+          break;
+        }
+
+        sep(Console::msg());
+
+
+        if (timeout_iterations_arg.value() && total_iterations >= timeout_iterations_arg.value()) {
+          show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, verified, true);
+          Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+        }
+
+        if (!verified && verifier.counter_examples_available() && failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
+          Console::msg() << "Restarting search using new testcase (counterexample from verifier):" << endl << endl;
+          Console::msg() << verifier.get_counter_examples()[0] << endl << endl;
+          training_sb.insert_input(verifier.get_counter_examples()[0]);
+        } else {
+          Console::msg() << "Restarting search" << endl;
+        }
       }
-      search.set_timeout_sec(time_remaining);
-      Console::msg() << " / " << time_remaining.count() << " seconds";
-    }
-    Console::msg() << "):" << endl << endl;
-    state = SearchStateGadget(target, aux_fxns);
 
-    // Run the initial cost function
-    // Used by statistics output and a sanity check
-    auto initial_cost = fxn(state.current);
-    if (!initial_cost.first && init_arg == Init::TARGET) {
-      Console::warn() << "Initial state has non-zero correctness cost with --init target.";
-    }
-    starting_cost = initial_cost.second;
-    lowest_cost = initial_cost.second;
-    if (initial_cost.first) {
-      lowest_correct = initial_cost.second;
-    } else {
-      lowest_correct = 0;
-    }
-
-    const auto start_search = steady_clock::now();
-    search.run(client, target, fxn, init_arg, state, aux_fxns);
-    search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search);
-
-    total_iterations += search.get_statistics().iterations;
-    total_restarts++;
-
-    if (state.interrupted) {
-      Console::msg() << endl;
-      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, false, false);
-      Console::msg() << "Search interrupted!" << endl;
-      exit(1);
-    }
-
-    const auto verified = verifier.verify(target, state.best_correct);
-
-    if (verifier.has_error()) {
-      Console::msg() << "The verifier encountered an error:" << endl;
-      Console::msg() << verifier.error() << endl;
-    }
-
-    if (!state.success) {
-      Console::msg() << "Unable to discover a new correct rewrite before timing out... " << endl << endl;
-    } else if (!verified) {
-      Console::msg() << "Unable to verify new rewrite..." << endl << endl;
-    } else {
-      if (strategy_arg.value() == "none") {
-        final_msg = "Search terminated successfully (but no verification was performed)!";
+      if (postprocessing_arg == Postprocessing::FULL) {
+        CfgTransforms::remove_redundant(state.best_correct);
+        CfgTransforms::remove_unreachable(state.best_correct);
+        CfgTransforms::remove_nop(state.best_correct);
+      } else if (postprocessing_arg == Postprocessing::SIMPLE) {
+        CfgTransforms::remove_unreachable(state.best_correct);
+        CfgTransforms::remove_nop(state.best_correct);
       } else {
-        final_msg = "Search terminated successfully with a verified rewrite!";
+        // Do nothing.
       }
-      break;
+
+      auto final_stats = search.get_statistics();
+      show_final_update(final_stats, state, total_restarts, total_iterations, start, search_elapsed, true, false);
+      Console::msg() << final_msg << endl;
+
+      ofstream ofs(out.value());
+      ofs << state.best_correct.get_function();
+      //reset end
+
+    } catch (const std::runtime_error& e){
+      if (std::string(e.what()) == "restart"){
+        std::cout << "environment reset" << endl;
+      }
     }
 
-    sep(Console::msg());
 
-
-    if (timeout_iterations_arg.value() && total_iterations >= timeout_iterations_arg.value()) {
-      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, verified, true);
-      Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
-    }
-
-    if (!verified && verifier.counter_examples_available() && failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
-      Console::msg() << "Restarting search using new testcase (counterexample from verifier):" << endl << endl;
-      Console::msg() << verifier.get_counter_examples()[0] << endl << endl;
-      training_sb.insert_input(verifier.get_counter_examples()[0]);
-    } else {
-      Console::msg() << "Restarting search" << endl;
-    }
   }
-
-  if (postprocessing_arg == Postprocessing::FULL) {
-    CfgTransforms::remove_redundant(state.best_correct);
-    CfgTransforms::remove_unreachable(state.best_correct);
-    CfgTransforms::remove_nop(state.best_correct);
-  } else if (postprocessing_arg == Postprocessing::SIMPLE) {
-    CfgTransforms::remove_unreachable(state.best_correct);
-    CfgTransforms::remove_nop(state.best_correct);
-  } else {
-    // Do nothing.
-  }
-
-  auto final_stats = search.get_statistics();
-  show_final_update(final_stats, state, total_restarts, total_iterations, start, search_elapsed, true, false);
-  Console::msg() << final_msg << endl;
-
-  ofstream ofs(out.value());
-  ofs << state.best_correct.get_function();
 
   return 0;
 }

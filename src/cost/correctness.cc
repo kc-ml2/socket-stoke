@@ -214,7 +214,7 @@ Cost CorrectnessCost::evaluate_error(int client, const CpuState& t, const CpuSta
     // Send the length buffer and then the data
     send(client, &data_length, sizeof(int), 0);
     send(client, dynamic_length_string.c_str(), data_length, 0);
-    send(client, &data_length, sizeof(int), 0);
+    send(client, &data_length, sizeof(int), 0); //cost
     return sig_penalty_;
   }
   // If this testcase has signalled, we can't guarantee register state --
