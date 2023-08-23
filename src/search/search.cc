@@ -170,8 +170,24 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
       send(client, &done, sizeof(int), 0);
       //cout << "restart" << endl;
       //throw std::runtime_error("restart");
+      //reset받아야함
+      int restart;
+      int action;
+      recv(client, &restart, sizeof(restart), 0);
+      recv(client, &action, sizeof(action), 0);
+      
+      std::string dynamic_length_string = "reset";
+      int data_length = dynamic_length_string.size();
+
+      // Send the length buffer and then the data
+      send(client, &data_length, sizeof(int), 0);
+      send(client, dynamic_length_string.c_str(), data_length, 0);
+      throw std::runtime_error("restart");
+    
+    } else {
+      send(client, &done, sizeof(int), 0);
     }
-    send(client, &done, sizeof(int), 0);
+    
     if ((progress_cb_ != nullptr) && (new_best_yet || new_best_correct_yet)) {
       progress_cb_({state}, progress_cb_arg_);
     }
