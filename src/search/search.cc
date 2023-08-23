@@ -168,9 +168,7 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
       done = 1;
       new_best_correct_cb_({state}, new_best_correct_cb_arg_);
       send(client, &done, sizeof(int), 0);
-      //cout << "restart" << endl;
       //throw std::runtime_error("restart");
-      //reset받아야함
       int restart;
       int action;
       recv(client, &restart, sizeof(restart), 0);
