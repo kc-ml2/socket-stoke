@@ -67,7 +67,7 @@ Search::Search(Transform* transform) : transform_(transform) {
 }
 
 void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, SearchState& state, vector<TUnit>& aux_fxns) {
-
+  int done = 0;
     // Configure initial state
   configure(target, fxn, state, aux_fxns);
 
@@ -87,14 +87,17 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
     state.success = true;
     state.best_correct = state.current;
     state.best_correct_cost = 0;
+    cout << "corner case" << endl;
     return;
   }
   fxn(client, state.current, 100000000); // for sending initial state
+  send(client, &done, sizeof(int), 0); // for sending initial state
   TransformInfo ti;
 
   give_up_now = false;
   size_t iterations = 0;
   for (iterations = 0; (state.current_cost > 0) && !give_up_now; ++iterations) {
+    done = 0;
     // Invoke statistics callback if we've been running for long enough
     if ((statistics_cb_ != nullptr) && (iterations % interval_ == 0) && iterations > 0) {
       elapsed = duration_cast<duration<double>>(steady_clock::now() - start);
@@ -130,6 +133,8 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
 
       send(client, &data_length2, sizeof(int), 0);
       send(client, dynamic_length_string2.c_str(), data_length2, 0);
+      
+      send(client, &done, sizeof(int), 0);
       continue;
     } 
     move_statistics[ti.move_type].num_succeeded++;
@@ -143,6 +148,7 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
 
     if (new_cost > max) {
       (*transform_).undo(state.current, ti);
+      send(client, &done, sizeof(int), 0);
       continue;
     }
     move_statistics[ti.move_type].num_accepted++;
@@ -159,10 +165,13 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
       state.success = true;
       state.best_correct = state.current;
       state.best_correct_cost = new_cost;
-
+      done = 1;
       new_best_correct_cb_({state}, new_best_correct_cb_arg_);
+      send(client, &done, sizeof(int), 0);
+      //cout << "restart" << endl;
+      //throw std::runtime_error("restart");
     }
-
+    send(client, &done, sizeof(int), 0);
     if ((progress_cb_ != nullptr) && (new_best_yet || new_best_correct_yet)) {
       progress_cb_({state}, progress_cb_arg_);
     }
