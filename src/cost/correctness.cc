@@ -205,28 +205,6 @@ Cost CorrectnessCost::sum_correctness(int client, const Cfg& cfg, const Cost max
 }
 
 Cost CorrectnessCost::evaluate_error(int client, const CpuState& t, const CpuState& r, const RegSet& defs) const {
-  // Only assess a signal penalty if target and rewrite disagree
-  if (t.code != r.code) {
-    std::string dynamic_length_string = "code not same error";  // how to treat it
-    int data_length = dynamic_length_string.size();
-
-
-    // Send the length buffer and then the data
-    send(client, &data_length, sizeof(int), 0);
-    send(client, dynamic_length_string.c_str(), data_length, 0);
-    send(client, &data_length, sizeof(int), 0); //cost
-    return sig_penalty_;
-  }
-  // If this testcase has signalled, we can't guarantee register state --
-  // and technically we can do whatever we want with signalling code -- so
-  // just return zero cost
-  if (t.code != ErrorCode::NORMAL) {
-    //TODO
-    //it doesn't seem important now
-    cout << "code abnormal error" << endl;
-
-    return 0;
-  }
   //sending part
   std::ostringstream cpu_state_data;
   cpu_state_data << r;
@@ -236,7 +214,22 @@ Cost CorrectnessCost::evaluate_error(int client, const CpuState& t, const CpuSta
   // Send the length buffer and then the data
   send(client, &data_length, sizeof(int), 0);
   send(client, resultString.c_str(), data_length, 0);
-
+  
+  // Only assess a signal penalty if target and rewrite disagree
+  if (t.code != r.code) {
+    send(client, &sig_penalty_, sizeof(int), 0); //cost
+    return sig_penalty_;
+  }
+  // If this testcase has signalled, we can't guarantee register state --
+  // and technically we can do whatever we want with signalling code -- so
+  // just return zero cost
+  if (t.code != ErrorCode::NORMAL) {
+    //TODO
+    //it doesn't seem important now
+    cout << "code abnormal error" << endl;
+    send(client, 0, sizeof(int), 0); //cost
+    return 0;
+  }
   // Otherwise, we can do the usual thing and check results register by register
   Cost cost = 0;
   cost += gp_error(t, r, defs);
