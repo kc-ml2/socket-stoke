@@ -383,8 +383,10 @@ vector<string>& split(string& s, const string& delim, vector<string>& result) {
 
 int main(int argc, char** argv) {
   int client;
-  int portnum = 12341; // stoi(argv[2]);
-  const char* ip = "127.0.0.1";; //argv[1];
+  int portnum = std::stoi(argv[4]);
+
+  argc -= 2; 
+  const char* ip = "127.0.0.1";
 
   struct sockaddr_in serv_addr;
 
