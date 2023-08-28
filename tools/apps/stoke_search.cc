@@ -384,7 +384,7 @@ vector<string>& split(string& s, const string& delim, vector<string>& result) {
 int main(int argc, char** argv) {
   int client;
   int portnum = std::stoi(argv[6]);
-
+  
   argc -= 2; 
   const char* ip = "127.0.0.1";
 
@@ -595,8 +595,9 @@ int main(int argc, char** argv) {
       //reset end
 
     } catch (const std::runtime_error& e){
-      if (std::string(e.what()) == "restart"){
+      if (std::string(e.what()) == "restart-deprecated"){
         std::cout << "environment reset" << endl;
+        break
       }
     }
 
