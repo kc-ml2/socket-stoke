@@ -383,7 +383,7 @@ vector<string>& split(string& s, const string& delim, vector<string>& result) {
 
 int main(int argc, char** argv) {
   int client;
-  int portnum = std::stoi(argv[4]);
+  int portnum = std::stoi(argv[6]);
 
   argc -= 2; 
   const char* ip = "127.0.0.1";
