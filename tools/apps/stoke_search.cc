@@ -597,7 +597,7 @@ int main(int argc, char** argv) {
     } catch (const std::runtime_error& e){
       if (std::string(e.what()) == "restart-deprecated"){
         std::cout << "environment reset" << endl;
-        break
+        break;
       }
     }
 
