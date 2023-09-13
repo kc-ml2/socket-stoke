@@ -139,19 +139,16 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
     } 
     move_statistics[ti.move_type].num_succeeded++;
 
-    const auto p = prob_(gen_);
-    const auto max = state.current_cost - (log(p) / beta_);
-
+    const auto max = state.current_cost;
     const auto new_res = fxn(client, state.current, max + 1);
     const auto is_correct = new_res.first;
     const auto new_cost = new_res.second;
-    /*
+
     if (new_cost > max) {
       (*transform_).undo(state.current, ti);
       send(client, &done, sizeof(int), 0);
       continue;
     }    
-    */
 
     move_statistics[ti.move_type].num_accepted++;
     state.current_cost = new_cost;
