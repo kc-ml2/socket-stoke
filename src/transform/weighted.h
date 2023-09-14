@@ -44,17 +44,39 @@ public:
   std::string get_name() const {
     return "Weighted";
   }
+  TransformInfo operator()(Cfg& cfg) {
+    size_t pool_index = gen_() % transform_pool_.size();
+    size_t tform_index = transform_pool_[pool_index];
+    Transform* tr = transforms_[tform_index];
+    auto ti = (*tr)(cfg);
+    ti.move_type = tform_index;
+    return ti;
+  }
   TransformInfo operator()(int opcode_action, Cfg& cfg){
     return (*this)(cfg);
   };
-  TransformInfo operator()(Cfg& cfg) {
+  TransformInfo transform_test(int client, Cfg& cfg){
+    int restart;
+    int action;
+    recv(client, &restart, sizeof(restart), 0);
+		recv(client, &action, sizeof(action), 0);
+
+    if (restart == 1){
+      std::string dynamic_length_string = "reset";
+      int data_length = dynamic_length_string.size();
+
+      // Send the length buffer and then the data
+      send(client, &data_length, sizeof(int), 0);
+      send(client, dynamic_length_string.c_str(), data_length, 0);
+      throw std::runtime_error("restart");
+    }
 
     size_t instruction_add_index = 2; // it is the tform_index type. not the pool_index type.
     Transform* instruction_add = transforms_[instruction_add_index];
     size_t opcode_pool_size = instruction_add->pools_.opcode_pool_.size() - 1;
     size_t total_size = opcode_pool_size + transform_pool_.size();
 
-    size_t pool_index = gen_() % total_size;
+    size_t pool_index = action % total_size;
     if (pool_index == 0) {
       pool_index = pool_index + 4;
     } else if (pool_index > 3){
@@ -72,31 +94,6 @@ public:
       ti.move_type = instruction_add_index;
       return ti;
     }
-    
-  }
-  
-  TransformInfo transform_test(int client, Cfg& cfg){
-    int restart;
-    int action;
-    recv(client, &restart, sizeof(restart), 0);
-		recv(client, &action, sizeof(action), 0);
-
-    if (restart == 1){
-      std::string dynamic_length_string = "reset";
-      int data_length = dynamic_length_string.size();
-
-      // Send the length buffer and then the data
-      send(client, &data_length, sizeof(int), 0);
-      send(client, dynamic_length_string.c_str(), data_length, 0);
-      throw std::runtime_error("restart");
-    }
-
-    size_t pool_index = action % transform_pool_.size();
-    size_t tform_index = transform_pool_[pool_index];
-    Transform* tr = transforms_[tform_index];
-    auto ti = (*tr)(cfg);
-    ti.move_type = tform_index;
-    return ti;
   }
 
   void undo(Cfg& cfg, const TransformInfo& info) const {
