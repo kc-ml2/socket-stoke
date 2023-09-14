@@ -33,6 +33,7 @@ public:
     will return success/failure, and also metadata to undo
     the transformation if needed.  */
   virtual TransformInfo operator()(Cfg& cfg) = 0;
+  virtual TransformInfo operator()(int opcode_action, Cfg& cfg) = 0;
 
   virtual TransformInfo transform_test(int client, Cfg& cfg) = 0;
 
@@ -47,7 +48,7 @@ public:
 
   virtual ~Transform() {}
 
-protected:
+//protected:
 
 
   /** Does this instruction induce control flow? */

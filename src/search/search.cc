@@ -145,6 +145,7 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
     const auto new_cost = new_res.second;
 
     if (new_cost > max) {
+      //int done = 2;
       (*transform_).undo(state.current, ti);
       send(client, &done, sizeof(int), 0);
       continue;
