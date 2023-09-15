@@ -89,7 +89,7 @@ public:
       ti.move_type = tform_index;
       return ti;
     } else {
-      size_t instruction_num = pool_index % opcode_pool_size;
+      size_t instruction_num = pool_index % (opcode_pool_size + 1);
       auto ti = (*instruction_add)(instruction_num, cfg);
       ti.move_type = instruction_add_index;
       return ti;
