@@ -23,11 +23,12 @@
 #include <algorithm>
 #include <array>
 #include <limits>
+#include <tuple>
+#include <string>
+#include <iostream>
 
 #include "src/cost/correctness.h"
 #include "src/ext/x64asm/include/x64asm.h"
-
-#include <iostream>
 
 using namespace cpputil;
 using namespace std;
@@ -173,52 +174,60 @@ Cost CorrectnessCost::sum_correctness(const Cfg& cfg, const Cost max) {
   return res;
 }
 
+
 Cost CorrectnessCost::sum_correctness(int client, const Cfg& cfg, const Cost max) {
   Cost res = 0;
+  string all_cpu_state = "";
   counter_example_testcase_ = -1;
 
   size_t i = 0;
   
   for (size_t ie = test_sandbox_->size(); res < max && i < ie; ++i) {
-    const auto err = evaluate_error(client, reference_out_[i], *(test_sandbox_->get_result(i)), cfg.def_outs());
+    const std::tuple<Cost, string> result = evaluate_error(client, reference_out_[i], *(test_sandbox_->get_result(i)), cfg.def_outs());
+    const auto err = std::get<0>(result);  // Extract the Cost value
+    const std::string cpu_state = std::get<1>(result);
     assert(err <= max_testcase_cost);
     if (err != 0 && counter_example_testcase_ < 0) {
       counter_example_testcase_ = i;
     }
     
     res += err;
+    all_cpu_state += cpu_state;
 
-    auto cfg_code = cfg.get_code();
-    std::ostringstream code;
-    code << cfg_code;
-    std::string resultString = code.str();
-    int data_length = resultString.size();
-    
-    // Send the length buffer and then the data
-    send(client, &data_length, sizeof(int), 0);
-    send(client, resultString.c_str(), data_length, 0);
   }
 
+  int cpu_data_length = all_cpu_state.size();
+  send(client, &cpu_data_length, sizeof(int), 0);
+  send(client, all_cpu_state.c_str(), cpu_data_length, 0);
+  int test_cost = res;
+  //cout << all_cpu_state << endl;
+  //cout << test_cost << endl;
+  send(client, &test_cost, sizeof(int), 0);
+  
+  auto cfg_code = cfg.get_code();
+  std::ostringstream code;
+  code << cfg_code;
+  std::string cfg_code_string = code.str();
+  int cfg_data_length = cfg_code_string.size();
+
+  //cout << cfg_code_string << endl;
+  
+  // Send the length buffer and then the data
+  send(client, &cfg_data_length, sizeof(int), 0);
+  send(client, cfg_code_string.c_str(), cfg_data_length, 0);
 
   assert(res <= max_correctness_cost);
   return res;
 }
 
-Cost CorrectnessCost::evaluate_error(int client, const CpuState& t, const CpuState& r, const RegSet& defs) const {
-  //sending part
+tuple<Cost,string> CorrectnessCost::evaluate_error(int client, const CpuState& t, const CpuState& r, const RegSet& defs) const {
   std::ostringstream cpu_state_data;
   cpu_state_data << r;
   std::string resultString = cpu_state_data.str();
-  int data_length = resultString.size();
-  
-  // Send the length buffer and then the data
-  send(client, &data_length, sizeof(int), 0);
-  send(client, resultString.c_str(), data_length, 0);
   
   // Only assess a signal penalty if target and rewrite disagree
   if (t.code != r.code) {
-    send(client, &sig_penalty_, sizeof(int), 0); //cost
-    return sig_penalty_;
+    return make_tuple(sig_penalty_, resultString);
   }
   // If this testcase has signalled, we can't guarantee register state --
   // and technically we can do whatever we want with signalling code -- so
@@ -226,9 +235,7 @@ Cost CorrectnessCost::evaluate_error(int client, const CpuState& t, const CpuSta
   if (t.code != ErrorCode::NORMAL) {
     //TODO
     //it doesn't seem important now
-    cout << "code abnormal error" << endl;
-    send(client, 0, sizeof(int), 0); //cost
-    return 0;
+    return make_tuple(0, resultString);
   }
   // Otherwise, we can do the usual thing and check results register by register
   Cost cost = 0;
@@ -241,8 +248,7 @@ Cost CorrectnessCost::evaluate_error(int client, const CpuState& t, const CpuSta
   if (heap_out_) {
     cost += block_heap_ ? block_mem_error(t.heap, r.heap, r.sse, defs) : mem_error(t.heap, r.heap);
   }
-  send(client, &cost, sizeof(int), 0);
-  return cost;
+  return make_tuple(cost, resultString);
 }
 
 Cost CorrectnessCost::evaluate_error(const CpuState& t, const CpuState& r, const RegSet& defs) const {
