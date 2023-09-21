@@ -199,10 +199,8 @@ Cost CorrectnessCost::sum_correctness(int client, const Cfg& cfg, const Cost max
   int cpu_data_length = all_cpu_state.size();
   send(client, &cpu_data_length, sizeof(int), 0);
   send(client, all_cpu_state.c_str(), cpu_data_length, 0);
-  int test_cost = res;
-  //cout << all_cpu_state << endl;
-  //cout << test_cost << endl;
-  send(client, &test_cost, sizeof(int), 0);
+  int all_cost = res;
+  send(client, &all_cost, sizeof(int), 0);
   
   auto cfg_code = cfg.get_code();
   std::ostringstream code;
