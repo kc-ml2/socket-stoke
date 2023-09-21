@@ -19,6 +19,9 @@
 #include <stdint.h>
 
 #include <vector>
+#include <tuple>
+#include <string>
+#include <iostream>
 
 #include "src/ext/cpputil/include/bits/bit_manip.h"
 #include "src/ext/x64asm/include/x64asm.h"
@@ -32,6 +35,8 @@
 #include "src/state/cpu_state.h"
 #include "src/state/memory.h"
 #include "src/state/regs.h"
+
+using namespace std;
 
 namespace stoke {
 
@@ -196,7 +201,7 @@ private:
   Cost evaluate_correctness(int client, const Cfg& cfg, const Cost max);
   /** Evaluate error between states. */
   Cost evaluate_error(const CpuState& t, const CpuState& r, const x64asm::RegSet& defs) const;
-  Cost evaluate_error(int client, const CpuState& t, const CpuState& r, const x64asm::RegSet& defs) const;
+  tuple<Cost,string> evaluate_error(int client, const CpuState& t, const CpuState& r, const x64asm::RegSet& defs) const;
   /** Evaluate error between general purpose registers. */
   Cost gp_error(const CpuState& t, const CpuState& r, const x64asm::RegSet& defs) const;
   /** Evaluate error between sse registers. */
