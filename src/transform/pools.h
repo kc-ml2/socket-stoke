@@ -121,7 +121,14 @@ public:
     return *this;
   }
 
-
+  /** Sets o to a random opcode; returns true on success */
+  bool get_control_free(int opcode_action, x64asm::Opcode& o) {
+    if (opcode_pool_.empty()) {
+      return false;
+    }
+    o = opcode_pool_[opcode_action % opcode_pool_.size()];
+    return true;
+  }
   /** Sets o to a random opcode; returns true on success */
   bool get_control_free(x64asm::Opcode& o) {
     if (opcode_pool_.empty()) {
@@ -199,7 +206,7 @@ public:
     return *this;
   }
 
-protected:
+//protected:
 
   void init_reg_pools();
 

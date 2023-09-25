@@ -44,7 +44,6 @@ public:
   std::string get_name() const {
     return "Weighted";
   }
-
   TransformInfo operator()(Cfg& cfg) {
     size_t pool_index = gen_() % transform_pool_.size();
     size_t tform_index = transform_pool_[pool_index];
@@ -53,6 +52,9 @@ public:
     ti.move_type = tform_index;
     return ti;
   }
+  TransformInfo operator()(int opcode_action, Cfg& cfg){
+    return (*this)(cfg);
+  };
   TransformInfo transform_test(int client, Cfg& cfg){
     int restart;
     int action;
@@ -69,12 +71,29 @@ public:
       throw std::runtime_error("restart");
     }
 
-    size_t pool_index = action % transform_pool_.size();
-    size_t tform_index = transform_pool_[pool_index];
-    Transform* tr = transforms_[tform_index];
-    auto ti = (*tr)(cfg);
-    ti.move_type = tform_index;
-    return ti;
+    size_t instruction_add_index = 2; // it is the tform_index type. not the pool_index type.
+    Transform* instruction_add = transforms_[instruction_add_index];
+    size_t opcode_pool_size = instruction_add->pools_.opcode_pool_.size() - 1;
+    size_t total_size = opcode_pool_size + transform_pool_.size();
+
+    size_t pool_index = action % total_size;
+    if (pool_index == 0) {
+      pool_index = pool_index + 4;
+    } else if (pool_index > 3){
+      pool_index = pool_index + 1;
+    }
+    if (pool_index < 4) {
+      size_t tform_index = transform_pool_[pool_index];
+      Transform* tr = transforms_[tform_index];
+      auto ti = (*tr)(cfg);
+      ti.move_type = tform_index;
+      return ti;
+    } else {
+      size_t instruction_num = pool_index % (opcode_pool_size + 1);
+      auto ti = (*instruction_add)(instruction_num, cfg);
+      ti.move_type = instruction_add_index;
+      return ti;
+    }
   }
 
   void undo(Cfg& cfg, const TransformInfo& info) const {

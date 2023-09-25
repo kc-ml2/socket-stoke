@@ -34,6 +34,9 @@ public:
     will return success/failure, and also metadata to undo
     the transformation if needed.  */
   TransformInfo operator()(Cfg& cfg);
+  TransformInfo operator()(int opcode_action, Cfg& cfg){
+    return (*this)(cfg);
+  };
   TransformInfo transform_test(int client, Cfg& cfg){
     return (*this)(cfg);
   };
