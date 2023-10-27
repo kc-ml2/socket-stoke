@@ -134,6 +134,9 @@ then
 elif [ "$SCMD" == "synthesize" ]
 then
 	exec $HERE/stoke_search --init zero "$@"
+elif [ "$SCMD" == "legal" ]
+then
+	exec $HERE/stoke_legal "$@"
 elif [ "$SCMD" == "optimize" ]
 then
 	exec $HERE/stoke_search --init target "$@"
