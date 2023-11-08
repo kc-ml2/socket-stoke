@@ -124,23 +124,16 @@ auto& no_progress_update_arg =
   cpputil::FlagArg::create("no_progress_update")
   .description("Don't show a progress update whenever a new best program is discovered");
 
-struct InteractionResult {
-    Cfg &cfg;
-    int cost; 
-    bool valid;
-    //InteractionResult() : cfg(), cost(10000), valid(false) {}
-};
 void send_string(int client, string message){
     int data_length = message.size();
-
 
     // Send the length buffer and then the data
     send(client, &data_length, sizeof(int), 0);
     send(client, message.c_str(), data_length, 0);
 
 }
-InteractionResult interaction(int client, SearchStateGadget& state, CostFunctionGadget& fxn) {
-    int cost = 100000;
+
+int interaction(int client, int cost, SearchStateGadget& state, CostFunctionGadget& fxn) {
     int restart;
     int instruction_index;
     int instruction_length;
@@ -166,28 +159,18 @@ InteractionResult interaction(int client, SearchStateGadget& state, CostFunction
     if (valid_instruction){
         state.current.get_function().replace(instruction_index, instruction, false, true);
         state.current.recompute_defs();
-        valid_assembly = state.current.check_invariants();
-        if (!valid_assembly) {
-            state.current.get_function().replace(instruction_index, undo_instruction, true);
-            state.current.recompute_defs();
-            send_string(client, "invalid assembly");
-        } else {
-            auto cost_ = fxn(client, state.current, cost);
-            cost = cost_.second;
-        }
+        //valid_assembly = state.current.check_invariants();
+
+        auto cost_ = fxn(client, state.current, cost);
+        cost = cost_.second;
     } else{
       send_string(client, "invalid instruction");
     }
-    bool valid = valid_instruction && valid_assembly;
-    InteractionResult inter_result{
-        state.current,
-        cost,
-        valid
-    };
+    bool valid = valid_instruction ;
 
     assert(state.current.invariant_no_undef_reads());
     assert(state.current.get_function().check_invariants());
-  auto cfg_code = state.current.get_code();
+    auto cfg_code = state.current.get_code();
     std::ostringstream code;
     code << cfg_code;
     std::string cfg_code_string = code.str();
@@ -198,7 +181,7 @@ InteractionResult interaction(int client, SearchStateGadget& state, CostFunction
     
     send(client, &cost, sizeof(int), 0);
     send(client, &valid, sizeof(bool), 0);
-    return inter_result;
+    return cost;
 }
 
 void sep(ostream& os, string c = "*") {
@@ -464,7 +447,7 @@ int main(int argc, char** argv) {
   
   argc -= 2; 
   const char* ip = "127.0.0.1";
-
+  
   struct sockaddr_in serv_addr;
 
   client = socket(AF_INET, SOCK_STREAM, 0);
@@ -490,6 +473,8 @@ int main(int argc, char** argv) {
   cout << "--> Waiting for server to confirm...\n";
   // recv(client, buffer, bufsize, 0);
   cout << "--> Connection confirmed..\n";
+  
+  
   const auto start = steady_clock::now();
   duration<double> search_elapsed = duration<double>(0.0);
 
@@ -577,7 +562,7 @@ int main(int argc, char** argv) {
   send(client, &valid, sizeof(bool), 0);
   
   while (cost > 0){
-    InteractionResult result = interaction(client, state, fxn);
+    cost = interaction(client, cost, state, fxn);
   }
 
   const auto verified = verifier.verify(target, state.best_correct);
@@ -599,6 +584,7 @@ int main(int argc, char** argv) {
     // Do nothing.
   }
   cout << "result : " << state.current.get_code() << endl;
+  cout << "verified! : " << verified << endl;
   /*
       for (size_t i = 0; ; ++i) {
 
