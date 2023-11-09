@@ -16,6 +16,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <fstream>
+#include <string>
 
 #include <chrono>
 #include <iostream>
@@ -543,6 +545,30 @@ int main(int argc, char** argv) {
   SearchStateGadget state(target, aux_fxns);
   CostFunctionGadget fxn(target, &training_sb, &perf_sb);
 
+
+  //////////////////////////send initial cpu state///////////////////////////
+  std::ifstream inputFile("/home/stoke/stoke/examples/hacker/p01/test.tc"); ///need to get from server
+
+  // Check if the file is open
+  if (!inputFile.is_open()) {
+      std::cerr << "Error opening file!" << std::endl;
+      return 1;
+  }
+
+  // Variable to store the contents of the file
+  std::string fileContents((std::istreambuf_iterator<char>(inputFile)),
+                          std::istreambuf_iterator<char>());
+
+  // Read the file and append each line to the variable
+  std::string line;
+  while (std::getline(inputFile, line)) {
+      fileContents += line + "\n";  // Add newline character for each line
+  }
+
+  // Close the file
+  inputFile.close();
+  send_string(client, fileContents);
+  //////////////////////////send initial cpu state///////////////////////////
 
   state = SearchStateGadget(target, aux_fxns);
   
