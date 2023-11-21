@@ -56,6 +56,40 @@ CorrectnessCost& CorrectnessCost::set_target(const Cfg& target, bool stack_out, 
   return *this;
 }
 
+CorrectnessCost& CorrectnessCost::set_target(int client, const Cfg& target, bool stack_out, bool heap_out) {
+  assert(test_sandbox_ != nullptr);
+  string all_target_string = "";
+  live_out_ = target.live_outs();
+  stack_out_ = stack_out;
+  heap_out_ = heap_out;
+
+  reference_out_.clear();
+  recompute_target_defs(target.live_outs());
+
+  test_sandbox_->insert_function(target);
+  test_sandbox_->set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
+  test_sandbox_->run();
+  for (auto i = test_sandbox_->result_begin(), ie = test_sandbox_->result_end(); i != ie; ++i) {
+    reference_out_.push_back(*i);
+  }
+  for (const auto& cpuState : reference_out_) {
+    stringstream sstream;
+    sstream << cpuState;
+    all_target_string += sstream.str();
+    sstream.clear();
+  }
+
+  //string target = reference_out_[*i];
+  //all_target_string += target;
+  int data_length = all_target_string.size();
+
+  // Send the length buffer and then the data
+  send(client, &data_length, sizeof(int), 0);
+  send(client, all_target_string.c_str(), data_length, 0);
+  
+  return *this;
+}
+
 void CorrectnessCost::recompute_target_defs(const RegSet& rs) {
 
   target_gp_out_.clear();

@@ -545,7 +545,6 @@ int main(int argc, char** argv) {
   SearchStateGadget state(target, aux_fxns);
   CostFunctionGadget fxn(target, &training_sb, &perf_sb);
 
-
   //////////////////////////send initial cpu state///////////////////////////
   std::ifstream inputFile("/home/stoke/stoke/examples/hacker/p01/test.tc"); ///need to get from server
 
@@ -569,7 +568,10 @@ int main(int argc, char** argv) {
   inputFile.close();
   send_string(client, fileContents);
   //////////////////////////send initial cpu state///////////////////////////
-
+  //////////////////////////send target cpu state///////////////////////////
+  CorrectnessCostGadget holdout_fxn1(target, &training_sb);
+  holdout_fxn1.set_target(client, target, stack_out_arg, heap_out_arg);
+  //////////////////////////send target cpu state///////////////////////////
   state = SearchStateGadget(target, aux_fxns);
   
   int cost = 100000;
