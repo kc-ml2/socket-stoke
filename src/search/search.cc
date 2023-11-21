@@ -125,7 +125,7 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
       send(client, &data_length, sizeof(int), 0);
       send(client, dynamic_length_string.c_str(), data_length, 0);
 
-      int err = 999999999;
+      int err = 9999;
       send(client, &err, sizeof(int), 0);
 
       std::string dynamic_length_string2 = "not success";
