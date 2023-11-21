@@ -67,6 +67,7 @@ public:
 
   /** Reset target function; evaluates testcases and caches the results. */
   CorrectnessCost& set_target(const Cfg& target, bool stack_out, bool heap_out);
+  CorrectnessCost& set_target(int client, const Cfg& target, bool stack_out, bool heap_out);
   /** Set metric for measuring distance between 64-bit values. */
   CorrectnessCost& set_distance(Distance d) {
     distance_ = d;

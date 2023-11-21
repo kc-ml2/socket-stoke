@@ -512,8 +512,12 @@ int main(int argc, char** argv) {
   inputFile.close();
   send_string(client, fileContents);
   //////////////////////////send initial cpu state///////////////////////////
-
+  //////////////////////////send target cpu state///////////////////////////
+  CorrectnessCostGadget holdout_fxn1(target, &training_sb);
+  holdout_fxn1.set_target(client, target, stack_out_arg, heap_out_arg);
+  //////////////////////////send target cpu state///////////////////////////
   SearchStateGadget state(target, aux_fxns);
+  
   while (true){
     //restart start
 
