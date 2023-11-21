@@ -124,6 +124,16 @@ auto& no_progress_update_arg =
   cpputil::FlagArg::create("no_progress_update")
   .description("Don't show a progress update whenever a new best program is discovered");
 
+
+void send_string(int client, string message){
+    int data_length = message.size();
+
+    // Send the length buffer and then the data
+    send(client, &data_length, sizeof(int), 0);
+    send(client, message.c_str(), data_length, 0);
+
+}
+
 void sep(ostream& os, string c = "*") {
   for (size_t i = 0; i < 80; ++i) {
     os << c;
@@ -478,6 +488,31 @@ int main(int argc, char** argv) {
   }
 
   string final_msg;
+
+  //////////////////////////send initial cpu state///////////////////////////
+  std::ifstream inputFile("/home/stoke/stoke/examples/hacker/p01/test.tc"); ///need to get from server
+
+  // Check if the file is open
+  if (!inputFile.is_open()) {
+      std::cerr << "Error opening file!" << std::endl;
+      return 1;
+  }
+
+  // Variable to store the contents of the file
+  std::string fileContents((std::istreambuf_iterator<char>(inputFile)),
+                          std::istreambuf_iterator<char>());
+
+  // Read the file and append each line to the variable
+  std::string line;
+  while (std::getline(inputFile, line)) {
+      fileContents += line + "\n";  // Add newline character for each line
+  }
+
+  // Close the file
+  inputFile.close();
+  send_string(client, fileContents);
+  //////////////////////////send initial cpu state///////////////////////////
+
   SearchStateGadget state(target, aux_fxns);
   while (true){
     //restart start
