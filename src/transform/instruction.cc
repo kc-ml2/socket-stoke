@@ -22,7 +22,6 @@ using namespace x64asm;
 namespace stoke {
 
 TransformInfo InstructionTransform::operator()(Cfg& cfg) {
-
   TransformInfo ti;
   ti.success = false;
 
@@ -81,7 +80,6 @@ TransformInfo InstructionTransform::operator()(Cfg& cfg) {
   return ti;
 }
 TransformInfo InstructionTransform::operator()(int opcode_action, Cfg& cfg) {
-
   TransformInfo ti;
   ti.success = false;
 
@@ -91,7 +89,7 @@ TransformInfo InstructionTransform::operator()(int opcode_action, Cfg& cfg) {
   if (!get_indices(cfg, bb, block_idx, ti.undo_index[0])) {
     return ti;
   }
-
+  ti.undo_index[0] = instruction_index;
   // Record the old value
   ti.undo_instr = cfg.get_code()[ti.undo_index[0]];
 
@@ -136,7 +134,7 @@ TransformInfo InstructionTransform::operator()(int opcode_action, Cfg& cfg) {
   ti.success = true;
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
-
+  instruction_index += 1;
   return ti;
 }
 

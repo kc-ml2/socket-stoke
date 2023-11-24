@@ -40,7 +40,7 @@ public:
   /** Undos a move performed on the Cfg.  Requires the 'TransformInfo'
       originally passed to operator() */
   void undo(Cfg& cfg, const TransformInfo& transform_info) const;
-
+  int instruction_index = 2;
 protected:
 
 private:
