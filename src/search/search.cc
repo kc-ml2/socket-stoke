@@ -143,14 +143,14 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
     const auto new_res = fxn(client, state.current, max + 1);
     const auto is_correct = new_res.first;
     const auto new_cost = new_res.second;
-    /*
+    
     if (new_cost > max) {
       int done = 2;
       (*transform_).undo(state.current, ti);
       send(client, &done, sizeof(int), 0);
       continue;
     }    
-    */
+    
     
     move_statistics[ti.move_type].num_accepted++;
     state.current_cost = new_cost;
