@@ -393,8 +393,9 @@ vector<string>& split(string& s, const string& delim, vector<string>& result) {
 int main(int argc, char** argv) {
   int client;
   int portnum = std::stoi(argv[6]);
+  char* testcases = argv[8];
   
-  argc -= 2; 
+  argc -= 4; 
   const char* ip = "127.0.0.1";
 
   struct sockaddr_in serv_addr;
@@ -489,7 +490,7 @@ int main(int argc, char** argv) {
   string final_msg;
 
   //////////////////////////send initial cpu state///////////////////////////
-  std::ifstream inputFile("/home/stoke/stoke/examples/hacker/p01/test.tc"); ///need to get from server
+  std::ifstream inputFile(testcases); ///need to get from server
 
   // Check if the file is open
   if (!inputFile.is_open()) {
