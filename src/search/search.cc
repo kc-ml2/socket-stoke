@@ -114,7 +114,7 @@ void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, Se
     }
 
     //ti = (*transform_)(state.current);
-    ti = (*transform_).transform_test(client, state.current);
+    ti = (*transform_).transform(client, state.current);
     move_statistics[ti.move_type].num_proposed++;
     if (!ti.success) {
       std::string dynamic_length_string = "not success";

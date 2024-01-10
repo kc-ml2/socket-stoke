@@ -44,7 +44,6 @@ public:
   std::string get_name() const {
     return "Weighted";
   }
-
   TransformInfo operator()(Cfg& cfg) {
     size_t pool_index = gen_() % transform_pool_.size();
     size_t tform_index = transform_pool_[pool_index];
@@ -53,7 +52,7 @@ public:
     ti.move_type = tform_index;
     return ti;
   }
-  TransformInfo transform_test(int client, Cfg& cfg){
+  TransformInfo transform(int client, Cfg& cfg){
     int restart;
     int action;
     recv(client, &restart, sizeof(restart), 0);
