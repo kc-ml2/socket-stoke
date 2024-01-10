@@ -55,7 +55,7 @@ public:
   TransformInfo operator()(int opcode_action, Cfg& cfg){
     return (*this)(cfg);
   };
-  TransformInfo transform_test(int client, Cfg& cfg){
+  TransformInfo transform(int client, Cfg& cfg){
     int restart;
     int action;
     recv(client, &restart, sizeof(restart), 0);

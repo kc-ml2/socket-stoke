@@ -36,7 +36,7 @@ public:
   TransformInfo operator()(int opcode_action, Cfg& cfg){
     return (*this)(cfg);
   };
-  TransformInfo transform_test(int client, Cfg& cfg){
+  TransformInfo transform(int client, Cfg& cfg){
     return (*this)(cfg);
   };
   /** Undos a move performed on the Cfg.  Requires the 'TransformInfo'

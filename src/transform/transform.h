@@ -35,7 +35,7 @@ public:
   virtual TransformInfo operator()(Cfg& cfg) = 0;
   virtual TransformInfo operator()(int opcode_action, Cfg& cfg) = 0;
 
-  virtual TransformInfo transform_test(int client, Cfg& cfg) = 0;
+  virtual TransformInfo transform(int client, Cfg& cfg) = 0;
 
   /** Undos a move performed on the Cfg.  Requires the 'TransformInfo'
       originally passed to operator() */
